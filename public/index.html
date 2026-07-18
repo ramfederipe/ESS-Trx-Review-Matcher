@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESS Txn Review Checker</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <h1>ESS Txn Review Checker</h1>
+        <p id="subtitle">Watching transaction review for wrong amount and wrong phone rows</p>
+      </div>
+      <div class="status-strip">
+        <span id="runState" class="pill">Loading</span>
+        <span id="modeState" class="pill">Dry-run</span>
+      </div>
+    </header>
+
+    <section class="toolbar">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" class="secondary">Stop</button>
+      <button id="runOnceBtn" class="secondary">Run once</button>
+      <button id="modeBtn" class="danger">Switch to live</button>
+      <label>
+        Interval
+        <input id="intervalInput" type="number" min="5" step="5">
+      </label>
+      <label>
+        Max per scan
+        <input id="maxInput" type="number" min="1" step="1">
+      </label>
+      <label>
+        Correct amount min
+        <input id="amountMinInput" type="number" min="0" step="1">
+      </label>
+      <label>
+        Correct amount max (0 = no limit)
+        <input id="amountMaxInput" type="number" min="0" step="1">
+      </label>
+      <label>
+        Page refresh min (0 = off)
+        <input id="dashboardRefreshInput" type="number" min="0" step="1">
+      </label>
+      <label>
+        Date scope
+        <select id="dateScopeInput">
+          <option value="all">All dates</option>
+          <option value="today">Today only</option>
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </select>
+      </label>
+      <div class="function-settings" role="group" aria-label="Enabled functions">
+        <span>Functions</span>
+        <label class="function-toggle"><input id="enableWrongAmountInput" type="checkbox">Wrong amount</label>
+        <label class="function-toggle"><input id="enableWrongPhoneInput" type="checkbox">Wrong phone</label>
+        <label class="function-toggle"><input id="enableManualApprovalInput" type="checkbox">Manual approval</label>
+        <label class="function-toggle"><input id="enableBalanceMismatchInput" type="checkbox">Balance mismatch</label>
+      </div>
+      <label class="review-url-list">
+        Txn Review links
+        <textarea id="reviewUrlsInput" placeholder="https://www.ewsolutions.app/admin/transactions/txn-review"></textarea>
+      </label>
+      <button id="saveConfigBtn" class="secondary">Save</button>
+    </section>
+
+    <section class="telegram-panel">
+      <div class="telegram-settings">
+        <label>
+          Telegram bot token
+          <input id="telegramTokenInput" class="token-input" type="password" autocomplete="off" placeholder="123456:ABC">
+        </label>
+        <label class="function-toggle telegram-toggle"><input id="enableTelegramFollowupInput" type="checkbox">Send Balance mismatch to TG</label>
+        <button id="saveTelegramBtn" class="secondary">Save TG</button>
+        <span id="telegramStatus" class="telegram-status">Telegram not configured</span>
+      </div>
+      <div class="chat-import">
+        <label>
+          Bulk chat ID import
+          <textarea id="chatImportInput" placeholder="AG1-CARBON 123456789&#10;AG1-DROID -1001234567890"></textarea>
+        </label>
+        <button id="importChatIdsBtn" class="secondary">Import chat IDs</button>
+        <label class="file-import-label">
+          Excel / CSV file
+          <input id="chatImportFileInput" type="file" accept=".xlsx,.xlsm,.csv,.tsv">
+        </label>
+        <button id="importChatIdFileBtn" class="secondary">Import file</button>
+        <div id="chatIdList" class="chat-id-list">No chat IDs imported.</div>
+      </div>
+    </section>
+
+    <section id="liveConfirm" class="live-confirm" hidden>
+      <strong>Live mode will click Make up deposit.</strong>
+      <span>Type LIVE to confirm.</span>
+      <input id="liveConfirmInput" type="text" autocomplete="off" placeholder="LIVE">
+      <button id="confirmLiveBtn" class="danger">Enable live</button>
+      <button id="cancelLiveBtn" class="secondary">Cancel</button>
+    </section>
+
+    <section class="metrics">
+      <div>
+        <span class="label">Last scan</span>
+        <strong id="lastCycle">-</strong>
+      </div>
+      <div>
+        <span class="label">Next scan</span>
+        <strong id="nextCycle">-</strong>
+      </div>
+      <div>
+        <span class="label">Review matches</span>
+        <strong id="candidateCount">0</strong>
+      </div>
+      <div>
+        <span class="label">Submitted refs saved</span>
+        <strong id="processedCount">0</strong>
+      </div>
+      <div>
+        <span class="label">Archived transactions</span>
+        <strong id="historyCount">0</strong>
+      </div>
+    </section>
+
+    <section class="split">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Current Matches</h2>
+          <span id="errorText"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Txn</th>
+                <th>Merchant</th>
+                <th>Agent</th>
+                <th>Gateway</th>
+                <th>Amount</th>
+                <th>Correct</th>
+                <th>Phone</th>
+                <th>Correct phone</th>
+                <th>TG Status</th>
+              </tr>
+            </thead>
+            <tbody id="candidateRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Activity</h2>
+        </div>
+        <div id="events" class="events"></div>
+      </div>
+    </section>
+
+    <section class="panel history-panel">
+      <div class="panel-head history-head">
+        <div>
+          <h2>Transaction History</h2>
+          <span id="historyResultCount" class="history-count">0 records</span>
+        </div>
+        <input id="historySearch" class="history-search" type="search" autocomplete="off" placeholder="Search reference, Gateway / SMS, phone, merchant">
+      </div>
+      <div class="table-wrap history-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Reference</th>
+              <th>Gateway / SMS</th>
+              <th>Merchant</th>
+              <th>Agent</th>
+              <th>Amount</th>
+              <th>Correct</th>
+              <th>Phone</th>
+              <th>Correct phone</th>
+              <th>Status</th>
+              <th>Outcome</th>
+              <th>Last update</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyRows">
+            <tr><td colspan="12">Loading transaction history...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="historyDialog" class="history-dialog">
+    <div class="dialog-head">
+      <h2 id="historyDialogTitle">Transaction details</h2>
+      <button id="closeHistoryDialog" class="icon-button" type="button" title="Close" aria-label="Close">&times;</button>
+    </div>
+    <dl id="historyDetails" class="history-details"></dl>
+    <h3>Action history</h3>
+    <div id="historyActions" class="history-actions"></div>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

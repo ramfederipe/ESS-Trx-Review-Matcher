@@ -1,0 +1,28 @@
+{
+  "reviewUrl": "https://www.ewsolutions.app/admin/transactions/txn-review",
+  "reviewUrls": [
+    "https://www.ewsolutions.app/admin/transactions/txn-review"
+  ],
+  "dashboardPort": 5177,
+  "remoteDebuggingPort": 9222,
+  "chromePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+  "chromeProfileDir": "chrome-profile",
+  "checkIntervalMs": 30000,
+  "dashboardRefreshMs": 600000,
+  "dateScope": "today",
+  "maxItemsPerCycle": 3,
+  "minAmount": 100,
+  "maxAmount": 3000,
+  "enableWrongAmount": true,
+  "enableWrongPhone": false,
+  "enableManualApproval": false,
+  "enableBalanceMismatch": true,
+  "enableTelegramFollowup": true,
+  "telegramBotToken": "8905877895:AAElKcfo_ytONebKJqn1PW3uliWtvtF7Eww",
+  "telegramLastUpdateId": 207008967,
+  "dryRun": false,
+  "startWorkerOnLaunch": true,
+  "requireGatewayMatch": true,
+  "allowedStatuses": [],
+  "postSubmitWaitMs": 3000
+}
