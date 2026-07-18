@@ -1,0 +1,18 @@
+# Secrets and local configuration
+config.json
+.env
+.env.*
+
+# Login data and private records
+chrome-profile/
+data/
+
+# Local development files
+.agents/
+node_modules/
+
+# Databases and logs
+*.db
+*.sqlite
+*.sqlite3
+*.log
